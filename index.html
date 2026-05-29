@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Replit API on Vercel</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width:720px; margin:40px auto; padding:0 16px; }
+    textarea, input, button { width:100%; font-size:1rem; margin:8px 0; }
+    textarea { min-height:140px; }
+    .output { white-space:pre-wrap; background:#f8f8f8; padding:16px; border-radius:8px; border:1px solid #ddd; }
+  </style>
+</head>
+<body>
+  <h1>Replit API on Vercel</h1>
+  <p>Use this page to call your Replit API through a Vercel serverless proxy.</p>
+  <label for="payload">Request payload (JSON):</label>
+  <textarea id="payload">{ "input": "Hello from Vercel" }</textarea>
+  <button id="send">Send to Replit API</button>
+  <h2>Response</h2>
+  <div id="result" class="output">No request sent yet.</div>
+
+  <script>
+    const result = document.getElementById('result');
+    const payload = document.getElementById('payload');
+    document.getElementById('send').addEventListener('click', async () => {
+      let body;
+      try {
+        body = JSON.parse(payload.value);
+      } catch (err) {
+        result.textContent = 'Invalid JSON payload: ' + err.message;
+        return;
+      }
+
+      result.textContent = 'Sending...';
+      try {
+        const res = await fetch('/api/replit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        result.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        result.textContent = 'Request failed: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
