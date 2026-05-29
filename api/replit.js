@@ -1,9 +1,4 @@
 module.exports = async (req, res) => {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed, use POST' });
-    return;
-  }
-
   const apiUrl = process.env.REPLIT_API_URL;
   const apiKey = process.env.REPLIT_API_KEY;
 
@@ -12,32 +7,39 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const headers = {
-    'Content-Type': 'application/json'
-  };
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed, use GET or POST' });
+    return;
+  }
+
+  const headers = {};
+  if (req.method === 'POST' && req.headers['content-type']) {
+    headers['Content-Type'] = req.headers['content-type'];
+  }
 
   if (apiKey) {
     headers.Authorization = `Bearer ${apiKey}`;
   }
 
-  try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(req.body)
-    });
+  const fetchOptions = {
+    method: req.method,
+    headers
+  };
 
-    const data = await response.text();
-    const contentType = response.headers.get('content-type') || '';
-    const isJson = contentType.includes('application/json');
+  if (req.method === 'POST') {
+    fetchOptions.body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
+  }
+
+  try {
+    const response = await fetch(apiUrl, fetchOptions);
+    const responseText = await response.text();
+    const contentType = response.headers.get('content-type');
 
     res.status(response.status);
-
-    if (isJson) {
-      res.json(JSON.parse(data));
-    } else {
-      res.send(data);
+    if (contentType) {
+      res.setHeader('Content-Type', contentType);
     }
+    res.send(responseText);
   } catch (error) {
     res.status(500).json({ error: 'Proxy request failed', details: error.message });
   }
